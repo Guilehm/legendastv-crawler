@@ -49,7 +49,7 @@ class SubtitleService {
                 { _id: ObjectId(subtitle.id) },
                 { ...subtitleData, crawled: true }
             )
-            const [totalCount, crawledCount] = await this.countSubtitles()
+            const [totalCount, crawledCount] = await this.countItems(Subtitle)
             logger.info(`Atualizando ${crawledCount} de ${totalCount} legendas.`)
             subtitle = await Subtitle.findOne({ crawled: false })
         }

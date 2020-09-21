@@ -29,7 +29,7 @@ class LegendasTvCrawler {
     }
 
     async goToPage(url) {
-        logger.info(`\tBuscando ${url}`)
+        logger.info(`\tRaspando ${url}`)
         this.page ? this.page.close() : ''
         const browser = this.browser || await this.getBrowser()
         this.browser = browser
@@ -47,7 +47,15 @@ class LegendasTvCrawler {
         await this.page.type('#UserUsername', this.username)
         await this.page.type('#UserPassword', this.password)
         await this.page.click('#UserLoginForm > button')
-        this.authenticated = true
+        const userInfo = await this.page.evaluate(
+            e => e.textContent, (await this.page.$x('//div[@class="login"]/a/text()'))[0]
+        )
+        if (userInfo === this.username) {
+            this.authenticated = true
+            logger.info(`Usuário ${this.username} autenticado com sucesso!`)
+        } else {
+            throw new Error('Nâo foi possível autenticar. Verifique suas credenciais.')
+        }
     }
 
     async searchTitles(searchText) {
@@ -97,38 +105,42 @@ class LegendasTvCrawler {
     }
 
     async getSubtitleData(subtitleUrl) {
-        if (!this.authenticated) await this.doLogin()
-        await this.goToPage(subtitleUrl)
-        await this.page.waitForXPath('//h1')
-        const name = await this.page.evaluate(e => e.textContent, (await this.page.$x('//h1/text()'))[0])
-        const downloadCount = await this.page
-            .evaluate(e => e.textContent, (await this.page.$x('//p/span[@class="number"]/text()'))[0])
-        const likes = await this.page
-            .evaluate(e => e ? e.textContent : 0, (await this.page.$x('//p/a[@class="ajax_rating"]//parent::p/text()'))[0])
-        const dislikes = await this.page.evaluate(
-            e => e ? e.textContent : 0,
-            (await this.page.$x('//p/a[@class="ajax_rating"]//parent::p/following-sibling::p/text()'))[0]
-        )
-        const sender = await this.page
-            .evaluate(e => e.textContent, (await this.page.$x('//span[@class="nume"]/a/text()'))[0])
-        const sendDate = await this.page
-            .evaluate(e => e.textContent, (await this.page.$x('//span[@class="date"]/text()'))[0])
-        const language = await this.page.evaluate(e => e.textContent, (await this.page.$x('//h1/img/@title'))[0])
-        await this.page.waitForXPath('//button[@class="icon_arrow"]')
-        const downloadId = await this.page.evaluate(
-            e => e.textContent.split("'")[1].split('/')[2],
-            (await this.page.$x('//button[@class="icon_arrow"]/@onclick'))[0]
-        )
-        return this.formatData({
-            name,
-            downloadCount,
-            likes,
-            dislikes,
-            sender,
-            sendDate,
-            language,
-            downloadUrl: `http://legendas.tv/downloadarquivo/${downloadId}`
-        })
+        try {
+            if (!this.authenticated) await this.doLogin()
+            await this.goToPage(subtitleUrl)
+            await this.page.waitForXPath('//h1')
+            const name = await this.page.evaluate(e => e.textContent, (await this.page.$x('//h1/text()'))[0])
+            const downloadCount = await this.page
+                .evaluate(e => e.textContent, (await this.page.$x('//p/span[@class="number"]/text()'))[0])
+            const likes = await this.page
+                .evaluate(e => e ? e.textContent : 0, (await this.page.$x('//p/a[@class="ajax_rating"]//parent::p/text()'))[0])
+            const dislikes = await this.page.evaluate(
+                e => e ? e.textContent : 0,
+                (await this.page.$x('//p/a[@class="ajax_rating"]//parent::p/following-sibling::p/text()'))[0]
+            )
+            const sender = await this.page
+                .evaluate(e => e.textContent, (await this.page.$x('//span[@class="nume"]/a/text()'))[0])
+            const sendDate = await this.page
+                .evaluate(e => e.textContent, (await this.page.$x('//span[@class="date"]/text()'))[0])
+            const language = await this.page.evaluate(e => e.textContent, (await this.page.$x('//h1/img/@title'))[0])
+            await this.page.waitForXPath('//button[@class="icon_arrow"]')
+            const downloadId = await this.page.evaluate(
+                e => e.textContent.split("'")[1].split('/')[2],
+                (await this.page.$x('//button[@class="icon_arrow"]/@onclick'))[0]
+            )
+            return this.formatData({
+                name,
+                downloadCount,
+                likes,
+                dislikes,
+                sender,
+                sendDate,
+                language,
+                downloadUrl: `http://legendas.tv/downloadarquivo/${downloadId}`
+            })
+        } catch (err) {
+            logger.error(err)
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const logger = require('../utils/logger')
 
-const mongoUrl = process.env.MONGODB_URI
+const mongoUrl = process.env.MONGODB_URI || 'mongodb://localhost:27017/legendastv'
 mongoose.connect(mongoUrl, {
     useNewUrlParser: true,
     useFindAndModify: false,

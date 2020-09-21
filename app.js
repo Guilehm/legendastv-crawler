@@ -25,6 +25,7 @@ const run = async () => {
             await service.getAndSaveSubtitleLinks()
             const [totalCountSUbtitles,] = await service.countItems(Subtitle)
             logger.info(`FORAM ENCONTRADAS ${totalCountSUbtitles} LEGENDAS.`)
+            await service.getAndUpdateSubtitles()
         } else if (program.update) {
             await service.getAndUpdateSubtitles()
         } else if (program.count) {
@@ -33,7 +34,7 @@ const run = async () => {
             logger.info(`LEGENDAS ATUALIZADAS: ${crawledCount}/${totalCount}.`)
         }
     } catch (err) {
-        logger.err(err.message)
+        logger.error(err.message)
         logger.info('OCORREU UM ERRO, POR FAVOR TENTE NOVAMENTE')
         process.exit(1)
     } finally {
@@ -41,4 +42,5 @@ const run = async () => {
         mongo.connection.close()
     }
 }
+
 run()

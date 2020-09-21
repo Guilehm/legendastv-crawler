@@ -1,0 +1,22 @@
+version: '3.3'
+services:
+
+  legendastv:
+    image: legendastv-crawler
+    build: .
+    command: node app.js --crawl -t "Os Simpsons"
+    container_name: legendastv-crawler
+    env_file:
+      - .env
+    environment:
+      MONGODB_URI: 'mongodb://mongo-legendastv:27017/legendastv'
+    depends_on:
+      - mongo-legendastv
+
+  mongo-legendastv:
+    container_name: mongo-legendastv
+    image: "mongo:3.4-jessie"
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongodb:/data/db
